@@ -23,19 +23,22 @@ await ws.ConnectAsync(new Uri(connectionString), cts.Token);
 // default are Apple, Google, Microsoft, and Amazon
 var latest = new Dictionary<string, StockSymbolQuote>();
 
-await AnsiConsole.Status()
+await AnsiConsole
+    .Status()
     .StartAsync("Loading stock symbols", async ctx =>
     {
+        var count = 1;
         foreach (var stockSymbol in StockSymbols)
         {
-            AnsiConsole.MarkupLine($"Loading quote for [green]{stockSymbol}[/]...");
-
+            ctx.Status($"Loading stock symbol {stockSymbol} (#{count} of {StockSymbols.Count})");
             // calling the API to get initial JSON data
             var initial = await FinnHub.GetQuote(stockSymbol, cts.Token);
             latest[stockSymbol] = initial;
 
             // on success subscribe to changes of symbol
             await ws.SendAsJsonAsync(new {type = "subscribe", symbol = stockSymbol}, cts.Token);
+            ctx.Status($"Subscribed to stock symbol {stockSymbol} (#{count} of {StockSymbols.Count})");
+            count += 1;
         }
     });
 
@@ -60,21 +63,22 @@ await AnsiConsole.Live(Text.Empty)
             }
 
             var table = new Table()
-                .Title("Stocks to Watch", new Style(Color.Green))
+                .Title("🤑 Stocks to Watch", new Style(Color.Green))
                 .Border(TableBorder.Rounded)
                 .AddColumn("Symbol")
-                .AddColumn("Opening Price ($)")
+                .AddColumn("Opening Price ($)", t => t.Alignment = Justify.Right)
                 .AddColumn("Current Price ($)", t => t.Alignment = Justify.Right)
-                .AddColumn("Difference ($/%)")
-                .AddColumn("Date / Time");
+                .AddColumn("Difference ($/%)", t => t.Alignment = Justify.Right)
+                .AddColumn("Updated");
 
             foreach (var (symbol, quote) in latest)
             {
-                table.AddRow(symbol,
-                    quote.OpeningPrice.ToString("$0000.0000"),
-                    $"{quote.CurrentPrice:$0000.0000} {quote.Direction}",
-                    $"{quote.Difference:$000.0000} ({quote.Percentage:P})",
-                    quote.Occurred.ToString("HH:mm:ss")
+                table.AddRow(
+                    $"[bold]{symbol}[/]",
+                    $"{quote.OpeningPrice:$0.0000}",
+                    $"{quote.CurrentPrice:$0.0000}",
+                    $"{quote.Difference:$0.0000} [dim][italic]({quote.Percentage:P})[/][/] {quote.Direction}",
+                    $"{quote.Occurred:HH:mm:ss}"
                 );
             }
 

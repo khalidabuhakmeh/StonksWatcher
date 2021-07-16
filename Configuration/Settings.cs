@@ -43,7 +43,7 @@ namespace Stonks.Configuration
             public static async Task<StockSymbolQuote> GetQuote(string symbol, CancellationToken cancellationToken)
             {
                 var request =
-                    $"{Settings.FinnHub.ApiUri}/quote?symbol={symbol}&token={Settings.FinnHub.Token}";
+                    $"{ApiUri}/quote?symbol={symbol}&token={Token}";
                 var json = await HttpClient.GetStringAsync(request, cancellationToken);
 
                 return JsonConvert.DeserializeObject<StockSymbolQuote>(json);
