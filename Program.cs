@@ -40,41 +40,44 @@ await AnsiConsole.Status()
     });
 
 // Now, we wait for responses from the web socked
-while (!cts.IsCancellationRequested)
-{
-    var results = await ws.ReceiveAsAsync<StockSymbolResponses>(cts.Token);
-
-    // this service sends a { "ping" : true }
-    // every once in a while 🤷‍
-    if (results is not {Data : { }})
-        continue;
-
-    foreach (var item in results.Data)
+await AnsiConsole.Live(Text.Empty)
+    .StartAsync(async ctx =>
     {
-        var symbol = latest[item.Symbol];
-        symbol.CurrentPrice = item.CurrentPrice;
-        symbol.Occurred = item.Occurred;
-    }
+        while (!cts.IsCancellationRequested)
+        {
+            var results = await ws.ReceiveAsAsync<StockSymbolResponses>(cts.Token);
 
-    var table = new Table()
-        .Title("Stocks to Watch", new Style(Color.Green))
-        .Border(TableBorder.Rounded)
-        .AddColumn("Symbol")
-        .AddColumn("Opening Price ($)")
-        .AddColumn("Current Price ($)", t => t.Alignment = Justify.Right)
-        .AddColumn("Difference ($/%)")
-        .AddColumn("Date / Time");
+            // this service sends a { "ping" : true }
+            // every once in a while 🤷‍
+            if (results is not { Data: { } })
+                continue;
 
-    foreach (var (symbol, quote) in latest)
-    {
-        table.AddRow(symbol,
-            quote.OpeningPrice.ToString("$0000.0000"),
-            $"{quote.CurrentPrice:$0000.0000} {quote.Direction}",
-            $"{quote.Difference:$000.0000} ({quote.Percentage:P})",
-            quote.Occurred.ToString("HH:mm:ss")
-        );
-    }
-    
-    AnsiConsole.Clear();
-    AnsiConsole.Render(table);
-}
+            foreach (var item in results.Data)
+            {
+                var symbol = latest[item.Symbol];
+                symbol.CurrentPrice = item.CurrentPrice;
+                symbol.Occurred = item.Occurred;
+            }
+
+            var table = new Table()
+                .Title("Stocks to Watch", new Style(Color.Green))
+                .Border(TableBorder.Rounded)
+                .AddColumn("Symbol")
+                .AddColumn("Opening Price ($)")
+                .AddColumn("Current Price ($)", t => t.Alignment = Justify.Right)
+                .AddColumn("Difference ($/%)")
+                .AddColumn("Date / Time");
+
+            foreach (var (symbol, quote) in latest)
+            {
+                table.AddRow(symbol,
+                    quote.OpeningPrice.ToString("$0000.0000"),
+                    $"{quote.CurrentPrice:$0000.0000} {quote.Direction}",
+                    $"{quote.Difference:$000.0000} ({quote.Percentage:P})",
+                    quote.Occurred.ToString("HH:mm:ss")
+                );
+            }
+
+            ctx.UpdateTarget(table);
+        }
+    });
