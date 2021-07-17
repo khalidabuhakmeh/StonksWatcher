@@ -42,7 +42,7 @@ await AnsiConsole
         }
     });
 
-// Now, we wait for responses from the web socked
+// Now, we wait for responses from the web socket
 await AnsiConsole.Live(Text.Empty)
     .StartAsync(async ctx =>
     {
