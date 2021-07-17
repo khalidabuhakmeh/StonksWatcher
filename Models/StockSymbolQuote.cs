@@ -9,7 +9,7 @@ namespace Stonks.Models
         [JsonProperty("c")] public decimal CurrentPrice { get; set; }
         [JsonIgnore] public DateTime Occurred { get; set; }
         [JsonIgnore] public decimal Difference => CurrentPrice - OpeningPrice;
-        [JsonIgnore] public decimal Percentage => Difference / OpeningPrice;
+        [JsonIgnore] public decimal Percentage => (OpeningPrice == 0 ? 0 : Difference / OpeningPrice);
 
         [JsonIgnore]
         public string Direction => Difference switch
